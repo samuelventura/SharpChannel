@@ -1,0 +1,82 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{3CB03FBA-8C13-45B1-AF0C-A67A22D262BF}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>SharpChannel.Manager.Service</RootNamespace>
+    <AssemblyName>SharpChannel.Manager.Service</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration.Install" />
+    <Reference Include="System.ServiceProcess" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Install.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SharpChannel.Channels.EchoChannel\SharpChannel.Channels.EchoChannel.csproj">
+      <Project>{90fc0d46-0d85-41ec-be80-a6d662a64e3b}</Project>
+      <Name>SharpChannel.Channels.EchoChannel</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SharpChannel.Channels.ModbusChannel\SharpChannel.Channels.ModbusChannel.csproj">
+      <Project>{b88f0edb-98da-421e-9fc3-0d4fc60c4626}</Project>
+      <Name>SharpChannel.Channels.ModbusChannel</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SharpChannel.Channels.SerialChannel\SharpChannel.Channels.SerialChannel.csproj">
+      <Project>{657e8028-9320-4880-a7b9-6e3fb927784d}</Project>
+      <Name>SharpChannel.Channels.SerialChannel</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SharpChannel.Channels.SocketChannel\SharpChannel.Channels.SocketChannel.csproj">
+      <Project>{ed02b252-40b9-47db-aaae-d951fe9fb434}</Project>
+      <Name>SharpChannel.Channels.SocketChannel</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SharpChannel.Manager.WebUI\SharpChannel.Manager.WebUI.csproj">
+      <Project>{0c5c25d8-c4cf-400f-9b53-2b306ec86e12}</Project>
+      <Name>SharpChannel.Manager.WebUI</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SharpChannel.Tools\SharpChannel.Tools.csproj">
+      <Project>{622074d6-349b-49aa-ab88-7d8f158ee8a7}</Project>
+      <Name>SharpChannel.Tools</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>XCOPY /Y "$(SolutionDir)*.bat" "$(TargetDir)"</PostBuildEvent>
+  </PropertyGroup>
+</Project>

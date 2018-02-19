@@ -1,0 +1,7 @@
+bin
+obj
+packages
+Output
+TestResults
+.vs
+.DS_Store

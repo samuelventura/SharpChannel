@@ -1,0 +1,1 @@
+SharpChannel.Manager.Service --uninstall

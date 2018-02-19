@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+@Partial['ChannelHeaders.html'];
+    </head>
+    <body>
+
+        <div id="app" class="container">            
+
+			<nav class="navbar navbar-inverse">
+				<span class="navbar-brand">
+					<span id="online" class="glyphicon glyphicon-list-alt" aria-hidden="true" title="Online"></span>
+					<span id="offline" class="glyphicon glyphicon-exclamation-sign" aria-hidden="true" title="Offline"></span>
+					Channels
+				</span>
+				<ul class="nav navbar-nav pull-right">
+					<li class="dropdown">
+						<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" 
+						aria-expanded="false" title="Add New Channel">
+						Add New <span class="caret"></span></a>
+						<ul class="dropdown-menu">
+						<li v-for="type in types"><a v-bind:href="'/New' + type.type + 'Channel'">{{ type.name }}</a></li>
+						</ul>
+					</li>
+					<li><a href="https://github.com/samuelventura/SharpChannel" title="GitHub Repository" target="_blank">
+					<i class="fa fa-lg fa-github" aria-hidden="true"></i>
+					</a></li>
+				</ul>
+			</nav>
+
+            <table class="table table-striped">
+			<thead>
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Access</th>
+                <th>Port</th>
+                <th>State</th> 
+                <th>Actions</th>
+            </tr>
+			</thead>
+			<tbody v-for="item in items">
+            <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.type }}</td>
+                <td>{{ item.access }}</td>
+                <td>{{ item.port }}</td>
+                <td>{{ item.state }}</td> 
+                <td>
+                    <form style="display:inline;" method="GET" v-bind:action="'/EditChannel/' + item.id">
+						<button type="submit" class="btn btn-sm">Edit</button></form>
+                    <form style="display:inline;" method="POST" v-bind:action="'/UpdateChannel/' + item.id + '/Local'">
+						<button type="submit" class="btn btn-sm">Local</button></form>
+                    <form style="display:inline;" method="POST" v-bind:action="'/UpdateChannel/' + item.id + '/Remote'">
+						<button type="submit" class="btn btn-sm">Remote</button></form>
+                    <form style="display:inline;" method="POST" v-bind:action="'/UpdateChannel/' + item.id + '/Disabled'">
+						<button type="submit" class="btn btn-sm">Disable</button></form>
+                </td>
+            </tr>
+			<tr><td colspan="6"><small>{{ item.config }}</small></td></tr>
+			</tbody>
+            </table>
+
+        </div>
+
+    </body>
+	<script>
+	var app = new Vue({el: "#app", data: {items: [], types: []}});
+	var UpdateTypes = function() {
+		$.ajax({ 
+			url: "/Api/Types", 
+			cache: false, 
+			dataType: "json", 
+			success: function(data) {
+				$("#online").show();
+				$("#offline").hide();
+				app.types = data;
+				$('.dropdown-toggle').dropdown();
+			},
+			error: function(request, status, error) {
+				$("#online").hide();
+				$("#offline").show();
+			}
+		});
+	}
+	var UpdateChannels = function() {
+		$.ajax({ 
+			url: "/Api/Index", 
+			cache: false, 
+			dataType: "json", 
+			success: function(data) {
+				$("#online").show();
+				$("#offline").hide();
+				app.items = data;
+			},
+			error: function(request, status, error) {
+				$("#online").hide();
+				$("#offline").show();
+			}
+		});
+	}
+	$("#online").hide();
+	$("#offline").hide();
+	window.setInterval(UpdateChannels, 1000);
+	UpdateTypes();
+	UpdateChannels();
+	</script>
+
+</html>

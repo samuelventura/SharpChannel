@@ -1,0 +1,64 @@
+@Master['ChannelEditor']
+
+@Section['Title']
+VISA Channel
+@EndSection
+
+@Section['Form']
+			<div class="form-group">
+			<label for="config.InstrID">Instrument ID <a id="refresh-InstrID" href="#">Refresh</a></label>
+			<select id="config-InstrID" class="form-control" placeholder="Instrument ID" required>
+			</select>
+			</div>
+@EndSection
+
+@Section['Footer']
+		<script>
+		var addOption = function(id, value) {
+			$("#config-" + id).append($('<option>', {value: value, text: value}));
+		}
+		var selectOption = function(id, value) {
+			$("#config-" + id + " option").prop("selected", false);
+			if (value) {
+				if (!$("#config-" + id + " option[value='" + value + "']").length) addOption(id, value);
+				$("#config-" + id + " option[value='" + value + "']").prop("selected", true);
+			}
+		}
+		var refreshInstrIDs = function() {
+			$.getJSON( "/Api/List/VISA", function(data) {
+				var selected = $("#config-InstrID").val();
+				if (selected && $.inArray(selected, data) < 0) data.push(selected);
+				$("#config-InstrID option").remove();
+				data.forEach(function(d){ addOption("InstrID", d); });
+				selectOption("InstrID", selected);
+			});
+		}
+		var configFromString = function() {
+			var config = $("input[name='config']").val();
+			var parts = config.split(",");
+			parts.forEach(function(part){
+				var sides = part.split("=");
+				var prop = sides[0];
+				var value = sides[1] || "";
+				selectOption(prop, value);
+			});
+			return config;
+		}
+		var configToString = function() {
+			var list = [];
+			$("select[id^='config-']").each(function(index, select){
+				var id = $(select).attr("id");
+				var prop = id.split("-")[1];
+				var value = $(select).val();
+				list.push(prop + "=" + value);
+			});
+			var config = list.join();
+			$("input[name='config']").val(config);
+			return config;
+		}
+		refreshInstrIDs();
+		configFromString();
+		$("#refresh-InstrID").click(refreshInstrIDs);
+		$("#save").click(configToString);
+		</script>
+@EndSection

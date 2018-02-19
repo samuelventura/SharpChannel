@@ -1,0 +1,46 @@
+@Master['ChannelEditor']
+
+@Section['Title']
+Socket Channel
+@EndSection
+
+@Section['Form']
+			<div class="form-group">
+			<label for="config.IP">Socket IP</label>
+			<input type="text" id="config-IP" class="form-control" placeholder="Socket IP" required pattern="((^|\.)((25[0-5])|(2[0-4]\d)|(1\d\d)|([1-9]?\d))){4}$">
+			</div>
+			<div class="form-group">
+			<label for="config.Port">Socket Port</label>
+			<input type="number" id="config-Port" class="form-control" placeholder="Socket Port" required min="1" max="65535">
+			</div>
+@EndSection
+
+@Section['Footer']
+		<script>
+		var configFromString = function() {
+			var config = $("input[name='config']").val();
+			var parts = config.split(",");
+			parts.forEach(function(part){
+				var sides = part.split("=");
+				var prop = sides[0];
+				var value = sides[1] || "";
+				$("#config-" + prop).val(value);
+			});
+			return config;
+		}
+		var configToString = function() {
+			var list = [];
+			$("input[id^='config-']").each(function(index, input){
+				var id = $(input).attr("id");
+				var prop = id.split("-")[1];
+				var value = $(input).val();
+				list.push(prop + "=" + value);
+			});
+			var config = list.join();
+			$("input[name='config']").val(config);
+			return config;
+		}
+		configFromString();
+		$("#save").click(configToString);
+		</script>
+@EndSection

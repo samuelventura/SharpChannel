@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+        <head>
+@Partial['ChannelHeaders.html'];
+        </head>
+        <body>
+
+        <div class="container">         
+
+			<nav class="navbar navbar-inverse">
+				<span class="navbar-brand">
+					<span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+					@Section['Title'];<small>@Section['Subtitle'];</small>
+				</span>
+				<ul class="nav navbar-nav pull-right">
+					<li><a href="/" title="Home">Home</a></li>
+					<li><a href="https://github.com/samuelventura/SharpChannel" title="GitHub Repository" target="_blank">
+					<i class="fa fa-lg fa-github" aria-hidden="true"></i>
+					</a></li>
+				</ul>
+			</nav>
+
+			<form action="/SaveChannel" method="POST">
+
+			<input type="hidden" name="id" value="@Model.Id">
+			<input type="hidden" name="type" value="@Model.Type">
+			<input type="hidden" name="config" value="@Model.Config">
+
+			<div class="form-group">
+			<label for="name">Channel Name</label>
+			<input value="@Model.Name" type="text" class="form-control" name="name" placeholder="Channel Name" required autofocus pattern="[a-zA-Z][a-zA-Z0-9-_]+">
+			</div>
+
+			<div class="form-group">
+			<label for="access">Channel Access</label>
+			<select id="access" class="form-control" name="access" placeholder="Channel Access" required>
+				<option value="Local">Local</option>
+				<option value="Remote">Remote</option>
+				<option value="Disabled">Disabled</option>
+			</select>
+			</div>
+
+			<div class="form-group">
+			<label for="port">Channel Port</label>
+			<input type="number" name="port" class="form-control" value="@Model.Port" placeholder="Channel Port" required min="0" max="65535">
+			</div>
+
+			@Section['Form'];
+
+			<div class="pull-right">
+				<a href="/" class="btn btn-default">Cancel</a>
+				<button id="save" type="submit" class="btn btn-primary">Save</button>
+			</div>
+
+			</form>
+
+			<form action="/RemoveChannel/@Model.Id" method="POST">
+				<button id="remove" type="submit" class="btn btn-danger pull-left">Remove</button>
+			</form>
+        </div>
+
+		@Section['Footer'];
+
+		<script>
+		$("#access option[value=@Model.Access]").prop("selected", true);
+		</script>
+
+        </body>
+</html>
