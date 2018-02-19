@@ -1,8 +1,6 @@
 ﻿using System;
 using System.IO.Ports;
 using System.Threading;
-using System.Threading.Tasks;
-using SharpChannel.Tools;
 using SharpModbus;
 
 namespace SharpChannel.Channels.ModbusChannel
@@ -27,6 +25,7 @@ namespace SharpChannel.Channels.ModbusChannel
                 case "--list":
                     var names = SerialPort.GetPortNames();
                     foreach (var name in names) Console.WriteLine(name);
+                    Console.Out.Flush();
                     return;
             }
 
@@ -34,7 +33,9 @@ namespace SharpChannel.Channels.ModbusChannel
             Config.Parse(serial, cmdline);
             serial.Open();
 
-            Task.Factory.StartNew(() => CheckLoop(serial), TaskCreationOptions.LongRunning);
+            var thread = new Thread(() => { CheckLoop(serial); });
+            thread.IsBackground = true;
+            thread.Start();
 
             var stream = new ModbusSerialStream(serial, 800);
             var tcpScanner = new ModbusTCPScanner();
@@ -63,6 +64,8 @@ namespace SharpChannel.Channels.ModbusChannel
                 }
                 line = Console.ReadLine();
             }
+
+            throw new Exception("Stdin closed unexpectedly");
         }
 
         private static void WriteLine(string format, params object[] args)
@@ -73,14 +76,9 @@ namespace SharpChannel.Channels.ModbusChannel
 
         private static void CheckLoop(SerialPort serial)
         {
-            var disposer = new Disposer();
-            disposer.Add(() => Environment.Exit(1));
-
-            using (disposer)
-            {
-                //removed ports require an IO call to be detected
-                while (serial.IsOpen) Thread.Sleep(10);
-            }
+            //removed ports require an IO call to be detected
+            while (serial.IsOpen) Thread.Sleep(10);
+            throw new Exception("Serial port closed unexpectedly");
         }
     }
 }

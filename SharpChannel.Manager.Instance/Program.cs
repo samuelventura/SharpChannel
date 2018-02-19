@@ -10,13 +10,22 @@ namespace SharpChannel.Manager.Instance
 {
     class Program
     {
+        private static void UnhandledExceptionTrapper(object sender, UnhandledExceptionEventArgs e)
+        {
+            Console.Error.WriteLine(((Exception)e.ExceptionObject).Message);
+            Console.Error.Flush();
+            Environment.Exit(1);
+        }
+
         private const TaskCreationOptions opts = TaskCreationOptions.LongRunning;
 
         private static object errorLock = new object();
-        private static object outLock = new object();
+        private static object stateLock = new object();
 
         public static void Main(string[] args)
         {
+            System.AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionTrapper;
+
             var joint = string.Join(" ", args);
             var parts = joint.Split(new char[] { ' ' }, 4);
             var ip = parts[0];
@@ -24,9 +33,9 @@ namespace SharpChannel.Manager.Instance
             var executable = parts[2];
             var arguments = parts.Length > 3 ? parts[3] : string.Empty;
 
-            WriteError("Endpoint <{0}>:<{1}>", ip, port);
-            WriteError("Executable <{0}>", executable);
-            WriteError("Arguments <{0}>", arguments);
+            WriteError("{0}:{1}", Readable.Make(ip), port);
+            WriteError(Readable.Make(executable));
+            WriteError(Readable.Make(arguments));
 
             var listener = new TcpListener(IPAddress.Parse(ip), port);
 
@@ -40,13 +49,15 @@ namespace SharpChannel.Manager.Instance
             {
                 line = Console.ReadLine();
             }
+
+            Environment.Exit(0);
         }
 
         private static ProcessStartInfo BuildStartInfo(string executable, string arguments)
         {
             var pi = new ProcessStartInfo(Executable.Relative(executable))
             {
-                Arguments = string.Format("{0}", arguments),
+                Arguments = arguments,
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
@@ -65,9 +76,9 @@ namespace SharpChannel.Manager.Instance
             }
         }
 
-        private static void WriteLine(string format, params object[] args)
+        private static void WriteState(string format, params object[] args)
         {
-            lock (outLock)
+            lock (stateLock)
             {
                 Console.WriteLine(format, args);
                 Console.Out.Flush();
@@ -90,16 +101,17 @@ namespace SharpChannel.Manager.Instance
                     }
                     catch (Exception ex)
                     {
-                        WriteLine("Error listening on {0}", listener.LocalEndpoint);
+                        WriteState("Error listening on {0}", listener.LocalEndpoint);
                         WriteError(ex.Message);
                         Thread.Sleep(5000);
                     }
                 }
-                var endpoint = listener.LocalEndpoint as IPEndPoint;
-                State(endpoint, pid);
 
-                TcpClient currentClient = null;
-                Task currentTask = null;
+                var endpoint = listener.LocalEndpoint as IPEndPoint;
+                SetState(endpoint, pid);
+
+                var currentClient = null as TcpClient;
+                var currentTask = null as Task;
 
                 while (true)
                 {
@@ -107,8 +119,7 @@ namespace SharpChannel.Manager.Instance
                     Disposer.Dispose(currentClient);
                     if (currentTask != null) currentTask.Wait();
                     currentClient = accepted;
-                    currentTask = Task.Factory.StartNew(() => SafeClientLoop(pid, endpoint, accepted, pir()), opts)
-                        .ContinueWith((p) => State(endpoint, pid));
+                    currentTask = Task.Factory.StartNew(() => SafeClientLoop(pid, endpoint, accepted, pir()), opts);
                 }
             }
         }
@@ -122,112 +133,98 @@ namespace SharpChannel.Manager.Instance
             }
             catch (Exception ex)
             {
-                WriteError("<{0}> <{1}>", pi.FileName, pi.Arguments);
+                WriteError(Readable.Make(pi.FileName));
+                WriteError(Readable.Make(pi.Arguments));
                 WriteError(ex.Message);
             }
         }
 
         private static void ClientLoop(int pid, IPEndPoint local, TcpClient client, ProcessStartInfo pi)
         {
-            var disposer = new Disposer();
-            disposer.Add(client);
+            var first = new Disposer();
 
-            using (disposer)
+            using (var disposer = new Disposer(() => { SetState(local, pid); }))
             {
+                disposer.Add(first);
+                disposer.Add(client);
+
                 var remote = client.Client.RemoteEndPoint as IPEndPoint;
 
-                State(local, pid, remote);
+                SetState(local, pid, remote);
 
                 var proc = Process.Start(pi);
 
                 disposer.Add(proc);
                 disposer.Add(proc.Kill);
 
-                State(local, pid, remote, proc.Id);
+                SetState(local, pid, remote, proc.Id);
 
                 var writeTask = Task.Factory.StartNew(() => WriteLine(proc, client), opts);
-                disposer.Add(writeTask);
                 var readTask = Task.Factory.StartNew(() => ReadLine(proc, client), opts);
-                disposer.Add(readTask);
                 var errorTask = Task.Factory.StartNew(() => ReadError(proc, client), opts);
-                disposer.Add(errorTask);
 
-                while (client.Connected && !proc.HasExited) Thread.Sleep(10);
+                first.Add(writeTask);
+                first.Add(readTask);
+                first.Add(errorTask);
+
+                while (true)
+                {
+                    if (writeTask.IsCompleted) break;
+                    if (readTask.IsCompleted && errorTask.IsCompleted) break;
+                    Thread.Sleep(10);
+                }
             }
         }
 
         private static void WriteLine(Process proc, TcpClient client)
         {
-            var disposer = new Disposer();
-            disposer.Add(proc);
-            disposer.Add(client);
-            disposer.Add(proc.Kill);
+            var bytes = new byte[4096];
 
-            using (disposer)
+            while (true)
             {
-                var bytes = new byte[4096];
-                while (!proc.HasExited)
-                {
-                    var count = client.GetStream().Read(bytes, 0, bytes.Length);
-                    if (count <= 0) return;
-                    var line = Convert.ToBase64String(bytes, 0, count);
-                    proc.StandardInput.WriteLine(line);
-                }
+                var count = client.GetStream().Read(bytes, 0, bytes.Length);
+                if (count <= 0) return;
+                var line = Convert.ToBase64String(bytes, 0, count);
+                proc.StandardInput.WriteLine(line);
             }
         }
 
         private static void ReadLine(Process proc, TcpClient client)
         {
-            var disposer = new Disposer();
-            disposer.Add(proc);
-            disposer.Add(client);
-            disposer.Add(proc.Kill);
+            var line = proc.StandardOutput.ReadLine();
 
-            using (disposer)
+            while (line != null)
             {
-                var line = proc.StandardOutput.ReadLine();
-
-                while (line != null)
-                {
-                    var bytes = Convert.FromBase64String(line);
-                    client.GetStream().Write(bytes, 0, bytes.Length);
-                    line = proc.StandardOutput.ReadLine();
-                }
+                var bytes = Convert.FromBase64String(line);
+                client.GetStream().Write(bytes, 0, bytes.Length);
+                line = proc.StandardOutput.ReadLine();
             }
         }
 
         private static void ReadError(Process proc, TcpClient client)
         {
-            var disposer = new Disposer();
-            disposer.Add(proc);
-            disposer.Add(client);
-            disposer.Add(proc.Kill);
+            var line = proc.StandardError.ReadLine();
 
-            using (disposer)
+            while (line != null)
             {
-                var line = proc.StandardError.ReadLine();
-
-                while (line != null)
-                {
-                    WriteError(line);
-                    line = proc.StandardError.ReadLine();
-                }
+                WriteError(line);
+                line = proc.StandardError.ReadLine();
             }
         }
 
-        private static void State(IPEndPoint local, int pid)
+        private static void SetState(IPEndPoint local, int pid)
         {
-            WriteLine("{0}:{1}", local, pid);
+            WriteState("{0}:{1}", local, pid);
         }
 
-        private static void State(IPEndPoint local, int pid, IPEndPoint remote)
+        private static void SetState(IPEndPoint local, int pid, IPEndPoint remote)
         {
-            WriteLine("{0}:{1} {2}", local, pid, remote);
+            WriteState("{0}:{1} {2}", local, pid, remote);
         }
 
-        private static void State(IPEndPoint local, int pid, IPEndPoint remote, int pid2)
+        private static void SetState(IPEndPoint local, int pid, IPEndPoint remote, int pid2)
         {
-            WriteLine("{0}:{1} {2}:{3}", local, pid, remote, pid2);
+            WriteState("{0}:{1} {2}:{3}", local, pid, remote, pid2);
         }
     }
 }

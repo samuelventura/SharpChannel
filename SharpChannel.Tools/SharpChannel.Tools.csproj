@@ -36,10 +36,10 @@
   <ItemGroup>
     <Compile Include="Disposer.cs" />
     <Compile Include="Executable.cs" />
-    <Compile Include="Hexadecimal.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Named.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Readable.cs" />
     <Compile Include="Runner.cs" />
     <Compile Include="Thrower.cs" />
   </ItemGroup>

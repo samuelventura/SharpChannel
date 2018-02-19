@@ -84,12 +84,12 @@ namespace SharpChannel.Manager
             foreach (var id in controllers.Keys)
             {
                 var controller = controllers[id];
-                var state = controller.ReadLine();
+                var state = controller.ReadState();
                 while (state != null)
                 {
                     states?.Invoke(id, state);
                     logger.Info("{0} State {1}", id, state);
-                    state = controller.ReadLine();
+                    state = controller.ReadState();
                 }
                 var error = controller.ReadError();
                 while (error != null)

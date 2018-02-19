@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO.Ports;
-using System.Threading.Tasks;
+using System.Threading;
 using SharpChannel.Tools;
 
 namespace SharpChannel.Channels.SerialChannel
@@ -25,6 +25,7 @@ namespace SharpChannel.Channels.SerialChannel
                 case "--list":
                     var names = SerialPort.GetPortNames();
                     foreach (var name in names) Console.WriteLine(name);
+                    Console.Out.Flush();
                     return;
             }
 
@@ -32,7 +33,9 @@ namespace SharpChannel.Channels.SerialChannel
             Config.Parse(serial, cmdline);
             serial.Open();
 
-            Task.Factory.StartNew(() => ReadLoop(serial), TaskCreationOptions.LongRunning);
+            var thread = new Thread(()=> { ReadLoop(serial);  });
+            thread.IsBackground = true;
+            thread.Start();
 
             var line = Console.ReadLine();
 
@@ -42,6 +45,8 @@ namespace SharpChannel.Channels.SerialChannel
                 serial.Write(bytes, 0, bytes.Length);
                 line = Console.ReadLine();
             }
+
+            throw new Exception("Stdin closed unexpectedly");
         }
 
         private static void WriteLine(string format, params object[] args)
@@ -52,19 +57,14 @@ namespace SharpChannel.Channels.SerialChannel
 
         private static void ReadLoop(SerialPort serial)
         {
-            var disposer = new Disposer();
-            disposer.Add(() => Environment.Exit(1));
+            var bytes = new byte[4096];
 
-            using (disposer)
+            while (true)
             {
-                var bytes = new byte[4096];
-                while (true)
-                {
-                    var count = serial.Read(bytes, 0, bytes.Length);
-                    if (count <= 0) return;
-                    var line = Convert.ToBase64String(bytes, 0, count);
-                    WriteLine(line);
-                }
+                var count = serial.Read(bytes, 0, bytes.Length);
+                if (count <= 0) throw new Exception("Serial port closed unexpectedly");
+                var line = Convert.ToBase64String(bytes, 0, count);
+                WriteLine(line);
             }
         }
     }

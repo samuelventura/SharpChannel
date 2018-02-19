@@ -24,7 +24,7 @@ namespace SharpChannel.Tools
             });
         }
 
-        private static void Execute(Action action)
+        public static void Execute(Action action)
         {
             try { action(); } catch (Exception) { }
         }
@@ -39,7 +39,7 @@ namespace SharpChannel.Tools
         public void Add(IDisposable disposable)
         {
             actions.Add(() => {
-                disposable.Dispose();
+                disposable?.Dispose();
             });
         }
 

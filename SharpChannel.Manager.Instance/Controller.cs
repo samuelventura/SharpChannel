@@ -11,9 +11,8 @@ namespace SharpChannel.Manager.Instance
     {
         private const TaskCreationOptions opts = TaskCreationOptions.LongRunning;
 
-        private readonly ConcurrentQueue<string> input = new ConcurrentQueue<string>();
+        private readonly ConcurrentQueue<string> state = new ConcurrentQueue<string>();
         private readonly ConcurrentQueue<string> error = new ConcurrentQueue<string>();
-        private readonly ConcurrentQueue<string> output = new ConcurrentQueue<string>();
 
         private readonly Task task;
 
@@ -24,7 +23,7 @@ namespace SharpChannel.Manager.Instance
             var filename = Executable.Relative(executable);
             var pi = new ProcessStartInfo(filename)
             {
-                Arguments = string.Format("{0}", arguments),
+                Arguments = arguments,
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
@@ -40,9 +39,9 @@ namespace SharpChannel.Manager.Instance
             task.Wait();
         }
 
-        public string ReadLine()
+        public string ReadState()
         {
-            input.TryDequeue(out string line);
+            state.TryDequeue(out string line);
             return line;
         }
 
@@ -52,49 +51,42 @@ namespace SharpChannel.Manager.Instance
             return line;
         }
 
-        public void WriteLine(string format, params object[] args)
-        {
-            var line = args.Length > 0 ? string.Format(format, args) : format;
-            output.Enqueue(line);
-        }
-
         private void Loop(ProcessStartInfo pi)
         {
             while (!disposed)
             {
                 try
                 {
-                    var disposer = new Disposer();
+                    var first = new Disposer();
 
-                    using (disposer)
+                    using (var disposer = new Disposer())
                     {
-                        var counter = new Counter();
+                        disposer.Add(first);
+
                         var proc = Process.Start(pi);
 
-                        var writeTask = Task.Factory.StartNew(() => WriteLine(proc, counter), opts);
-                        var readTask = Task.Factory.StartNew(() => ReadLine(proc, counter), opts);
-                        var errorTask = Task.Factory.StartNew(() => ReadError(proc, counter), opts);
-
-                        disposer.Add(writeTask);
-                        disposer.Add(readTask);
-                        disposer.Add(errorTask);
-
-                        //dispose flag should start by killing proc
                         disposer.Add(proc);
                         disposer.Add(proc.Kill);
+
+                        var stateTask = Task.Factory.StartNew(() => ReadState(proc), opts);
+                        var errorTask = Task.Factory.StartNew(() => ReadError(proc), opts);
+
+                        first.Add(stateTask);
+                        first.Add(errorTask);
 
                         while (true)
                         {
                             if (disposed) break;
-                            if (counter.Count >= 3) break;
+                            if (stateTask.IsCompleted && errorTask.IsCompleted) break;
                             Thread.Sleep(10);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    input.Enqueue(ex.Message);
-                    error.Enqueue(string.Format("<{0}> <{1}>", pi.FileName, pi.Arguments));
+                    state.Enqueue(ex.Message);
+                    error.Enqueue(Readable.Make(pi.FileName));
+                    error.Enqueue(Readable.Make(pi.Arguments));
                     error.Enqueue(ex.Message);
                     var millis = 5000;
                     while (--millis > 0)
@@ -106,66 +98,27 @@ namespace SharpChannel.Manager.Instance
             }
         }
 
-        private void WriteLine(Process proc, Counter counter)
+        private void ReadState(Process proc)
         {
-            using (new Disposer(counter.Increment))
+            var line = proc.StandardOutput.ReadLine();
+
+            while (line != null)
             {
-                while (counter.Count == 0)
-                {
-                    output.TryDequeue(out string line);
+                state.Enqueue(line);
 
-                    if (line == null) { Thread.Sleep(10); continue; }
-
-                    proc.StandardInput.WriteLine(line);
-                }
+                line = proc.StandardOutput.ReadLine();
             }
         }
 
-        private void ReadLine(Process proc, Counter counter)
+        private void ReadError(Process proc)
         {
-            using (new Disposer(counter.Increment))
+            var line = proc.StandardError.ReadLine();
+
+            while (line != null)
             {
-                var line = proc.StandardOutput.ReadLine();
+                error.Enqueue(line);
 
-                while (line != null)
-                {
-                    input.Enqueue(line);
-
-                    line = proc.StandardOutput.ReadLine();
-                }
-            }
-        }
-
-        private void ReadError(Process proc, Counter counter)
-        {
-            using (new Disposer(counter.Increment))
-            {
-                var line = proc.StandardError.ReadLine();
-
-                while (line != null)
-                {
-                    error.Enqueue(line);
-
-                    line = proc.StandardError.ReadLine();
-                }
-            }
-        }
-
-        private class Counter
-        {
-            private int count;
-
-            public void Increment()
-            {
-                lock (this) { count++; }
-            }
-
-            public int Count
-            {
-                get
-                {
-                    lock (this) { return count; }
-                }
+                line = proc.StandardError.ReadLine();
             }
         }
     }

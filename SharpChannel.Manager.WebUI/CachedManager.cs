@@ -102,7 +102,7 @@ namespace SharpChannel.Manager.WebUI
                 foreach (var instance in instances.Values)
                 {
                     states.TryGetValue(instance.Id, out string state);
-                    list.Add(new ChannelModel(instance, state));
+                    list.Add(new ChannelModel(instance, state ?? string.Empty));
                 }
                 return list;
             }
@@ -116,6 +116,7 @@ namespace SharpChannel.Manager.WebUI
                 else states[id] = state;
             }
         }
+
         private List<ChannelPlugin> FindPlugins()
         {
             var list = new List<ChannelPlugin>();

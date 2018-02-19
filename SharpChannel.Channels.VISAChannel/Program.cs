@@ -30,6 +30,8 @@ namespace SharpChannel.Channels.VISAChannel
                             Console.WriteLine(instID);
                         }
                     }
+                    Console.Out.Flush();
+                    Environment.Exit(0);
                     return;
             }
 
@@ -57,6 +59,8 @@ namespace SharpChannel.Channels.VISAChannel
                     }
                 }
             }
+
+            throw new Exception("Stdin closed unexpectedly");
         }
     }
 }
