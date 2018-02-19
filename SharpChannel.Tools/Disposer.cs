@@ -7,52 +7,51 @@ namespace SharpChannel.Tools
     public class Disposer : IDisposable
     {
         // SerialPort, Socket, TcpClient, Streams, Writers, Readers, ...
-        public static void Dispose(object disposable)
+        public static void Dispose(object any)
         {
-            Execute(() => {
-                if (disposable is IDisposable)
-                    ((IDisposable)disposable).Dispose();
+            IgnoreException(() => {
+                if (any is IDisposable disposable) disposable.Dispose();
             });
         }
 
         // TcpListener
         public static void Stop(TcpListener stoppable)
         {
-            Execute(() => {
-                if (stoppable != null)
-                    stoppable.Stop();
+            IgnoreException(() => {
+                stoppable?.Stop();
             });
         }
 
-        public static void Execute(Action action)
+        public static void IgnoreException(Action action)
         {
-            try { action(); } catch (Exception) { }
+            try { action?.Invoke(); } catch (Exception) { }
         }
 
-        private readonly List<Action> actions;
+        private readonly Stack<Action> actions;
 
         public Disposer(params Action[] actions)
         {
-            this.actions = new List<Action>(actions);
+            this.actions = new Stack<Action>(actions);
         }
 
         public void Add(IDisposable disposable)
         {
-            actions.Add(() => {
+            actions.Push(() => {
                 disposable?.Dispose();
             });
         }
 
         public void Add(Action action)
         {
-            actions.Add(action);
+            actions.Push(action);
         }
 
         public void Dispose()
         {
-            actions.Reverse();
-            foreach (var action in actions) Execute(action);
-            actions.Clear();
+            while (actions.Count > 0)
+            {
+                IgnoreException(actions.Pop());
+            }
         }
     }
 }
