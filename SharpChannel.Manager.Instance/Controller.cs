@@ -68,11 +68,12 @@ namespace SharpChannel.Manager.Instance
 
                     using (disposer)
                     {
+                        var counter = new Counter();
                         var proc = Process.Start(pi);
 
-                        var writeTask = Task.Factory.StartNew(() => WriteLine(proc), opts);
-                        var readTask = Task.Factory.StartNew(() => ReadLine(proc), opts);
-                        var errorTask = Task.Factory.StartNew(() => ReadError(proc), opts);
+                        var writeTask = Task.Factory.StartNew(() => WriteLine(proc, counter), opts);
+                        var readTask = Task.Factory.StartNew(() => ReadLine(proc, counter), opts);
+                        var errorTask = Task.Factory.StartNew(() => ReadError(proc, counter), opts);
 
                         disposer.Add(writeTask);
                         disposer.Add(readTask);
@@ -82,7 +83,12 @@ namespace SharpChannel.Manager.Instance
                         disposer.Add(proc);
                         disposer.Add(proc.Kill);
 
-                        while (!disposed && !proc.HasExited) Thread.Sleep(10);
+                        while (true)
+                        {
+                            if (disposed) break;
+                            if (counter.Count >= 3) break;
+                            Thread.Sleep(10);
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -91,20 +97,20 @@ namespace SharpChannel.Manager.Instance
                     error.Enqueue(string.Format("<{0}> <{1}>", pi.FileName, pi.Arguments));
                     error.Enqueue(ex.Message);
                     var millis = 5000;
-                    while (!disposed && --millis > 0) Thread.Sleep(1);
+                    while (--millis > 0)
+                    {
+                        if (disposed) break;
+                        Thread.Sleep(1);
+                    }
                 }
             }
         }
 
-        private void WriteLine(Process proc)
+        private void WriteLine(Process proc, Counter counter)
         {
-            var disposer = new Disposer();
-            disposer.Add(proc);
-            disposer.Add(proc.Kill);
-
-            using (disposer)
+            using (new Disposer(counter.Increment))
             {
-                while (!proc.HasExited)
+                while (counter.Count == 0)
                 {
                     output.TryDequeue(out string line);
 
@@ -115,13 +121,9 @@ namespace SharpChannel.Manager.Instance
             }
         }
 
-        private void ReadLine(Process proc)
+        private void ReadLine(Process proc, Counter counter)
         {
-            var disposer = new Disposer();
-            disposer.Add(proc);
-            disposer.Add(proc.Kill);
-
-            using (disposer)
+            using (new Disposer(counter.Increment))
             {
                 var line = proc.StandardOutput.ReadLine();
 
@@ -134,13 +136,9 @@ namespace SharpChannel.Manager.Instance
             }
         }
 
-        private void ReadError(Process proc)
+        private void ReadError(Process proc, Counter counter)
         {
-            var disposer = new Disposer();
-            disposer.Add(proc);
-            disposer.Add(proc.Kill);
-
-            using (disposer)
+            using (new Disposer(counter.Increment))
             {
                 var line = proc.StandardError.ReadLine();
 
@@ -149,6 +147,24 @@ namespace SharpChannel.Manager.Instance
                     error.Enqueue(line);
 
                     line = proc.StandardError.ReadLine();
+                }
+            }
+        }
+
+        private class Counter
+        {
+            private int count;
+
+            public void Increment()
+            {
+                lock (this) { count++; }
+            }
+
+            public int Count
+            {
+                get
+                {
+                    lock (this) { return count; }
                 }
             }
         }

@@ -7,20 +7,20 @@ namespace SharpChannel.Tools
     public class Disposer : IDisposable
     {
         // SerialPort, Socket, TcpClient, Streams, Writers, Readers, ...
-        public static void Dispose(IDisposable disposable)
+        public static void Dispose(object disposable)
         {
             Execute(() => {
-                if (disposable != null)
-                    disposable.Dispose();
+                if (disposable is IDisposable)
+                    ((IDisposable)disposable).Dispose();
             });
         }
 
         // TcpListener
-        public static void Close(TcpListener closeable)
+        public static void Stop(TcpListener stoppable)
         {
             Execute(() => {
-                if (closeable != null)
-                    closeable.Stop();
+                if (stoppable != null)
+                    stoppable.Stop();
             });
         }
 
@@ -31,9 +31,9 @@ namespace SharpChannel.Tools
 
         private readonly List<Action> actions;
 
-        public Disposer()
+        public Disposer(params Action[] actions)
         {
-            this.actions = new List<Action>();
+            this.actions = new List<Action>(actions);
         }
 
         public void Add(IDisposable disposable)

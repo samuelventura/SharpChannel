@@ -3,8 +3,8 @@
 
 #define MyAppName "Channel Manager VISA Plugin"
 #define MyAppParent "Channel Manager"
-#define MyAppVersion "1.0.1"
-#define MyAppPublisher "Samuel Ventura"
+#define MyAppVersion "1.0.2"
+#define MyAppPublisher "Samuel Ventura" 
 #define MyAppURL "https://github.com/samuelventura/SharpChannel"
 
 [Setup]

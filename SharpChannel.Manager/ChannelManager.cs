@@ -21,7 +21,7 @@ namespace SharpChannel.Manager
             this.logger = new Logger(PatternLogFormatter.TIMESTAMP_LEVEL_LINE);
             this.logger.AddAppender(new ConsoleLogAppender());
             this.logger.AddAppender(new WriterLogAppender(logfile));
-            this.runner = new ThreadRunner("Manager", OnError, OnIdle);
+            this.runner = new ThreadRunner("Manager", OnError, OnIdle, 10);
         }
 
         public Logger Logger { get { return logger;  } }
@@ -98,7 +98,6 @@ namespace SharpChannel.Manager
                     error = controller.ReadError();
                 }
             }
-            Thread.Sleep(10);
         }
 
         private void OnError(Exception ex)

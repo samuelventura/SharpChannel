@@ -11,24 +11,30 @@ namespace SharpChannel.Tools
 
     public class ThreadRunner : IRunner, IDisposable
     {
-        private readonly Queue<Named> msgs;
+        private readonly Action<Exception> catcher;
+        private readonly Queue<Named> queue;
         private readonly Thread thread;
         private readonly Action idle;
+        private readonly int delay;
 
-        public ThreadRunner(string name)
-            : this(name, null)
+        public ThreadRunner(string name) : this(name, null, null, 0)
         {
         }
 
-        public ThreadRunner(string name, Action<Exception> catcher, Action idle = null)
-            : this(name, idle)
+        public ThreadRunner(string name, Action idle, int delay = 0) : this(name, null, idle, delay)
         {
         }
 
-        public ThreadRunner(string name, Action idle = null)
+        public ThreadRunner(string name, Action<Exception> catcher) : this(name, catcher, null, 0)
         {
+        }
+
+        public ThreadRunner(string name, Action<Exception> catcher, Action idle, int delay = 0)
+        {
+            this.catcher = catcher;
             this.idle = idle;
-            this.msgs = new Queue<Named>();
+            this.delay = delay;
+            this.queue = new Queue<Named>();
             this.thread = new Thread(Loop)
             {
                 IsBackground = true,
@@ -63,56 +69,57 @@ namespace SharpChannel.Tools
 
         private void Loop()
         {
-            var last = DateTime.Now;
-
             while (true)
             {
-                var msg = Poll();
-                if (msg == null)
+                var named = Poll();
+
+                switch (named.Name)
                 {
-                    if (idle != null) Execute(idle);
-                    else Thread.Sleep(1);
-                }
-                else
-                {
-                    switch (msg.Name)
-                    {
-                        case "action":
-                            Execute((Action)msg.Payload);
-                            break;
-                        case "flush":
-                            var flag = (AutoResetEvent)msg.Payload;
-                            flag.Set();
-                            break;
-                        case "dispose":
-                            var action = (Action)msg.Payload;
-                            if (action != null) Execute(action);
-                            return;
-                    }
+                    case "action":
+                        Execute((Action)named.Payload);
+                        break;
+                    case "flush":
+                        var flag = (AutoResetEvent)named.Payload;
+                        flag.Set();
+                        break;
+                    case "dispose":
+                        var action = (Action)named.Payload;
+                        if (action != null) Execute(action);
+                        return;
                 }
             }
         }
 
-        private void Push(Named msg)
+        private void Push(Named named)
         {
-            lock (msgs)
+            lock (queue)
             {
-                msgs.Enqueue(msg);
+                queue.Enqueue(named);
+                Monitor.Pulse(queue);
             }
         }
 
         private Named Poll()
         {
-            lock (msgs)
+            lock (queue)
             {
-                if (msgs.Count > 0) return msgs.Dequeue();
+                while (queue.Count == 0)
+                {
+                    if (idle == null) Monitor.Wait(queue);
+                    else if (!Monitor.Wait(queue, delay))
+                    {
+                        return new Named("action", idle);
+                    }
+                }
+                return queue.Dequeue();
             }
-            return null;
         }
 
         private void Execute(Action action)
         {
-            try { action(); } catch (Exception) { }
+            try { action(); }
+            catch (Exception ex)
+            { try { catcher?.Invoke(ex); } catch (Exception) { } }
         }
     }
 }

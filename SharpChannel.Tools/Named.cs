@@ -21,6 +21,4 @@
             get { return payload; }
         }
     }
-
-
 }

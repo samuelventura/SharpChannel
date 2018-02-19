@@ -36,6 +36,7 @@
   <ItemGroup>
     <Compile Include="Disposer.cs" />
     <Compile Include="Executable.cs" />
+    <Compile Include="Hexadecimal.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Named.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
