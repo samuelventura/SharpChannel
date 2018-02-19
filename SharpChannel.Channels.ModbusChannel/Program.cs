@@ -59,19 +59,14 @@ namespace SharpChannel.Channels.ModbusChannel
                     var rtuResponse = rtuRequestCommand.ParseResponse(rtuResponseBytes, 0);
                     var tcpResponseBytes = new byte[tcpRequestCommand.ResponseLength];
                     tcpRequestCommand.FillResponse(tcpResponseBytes, 0, rtuResponse);
-                    WriteLine(Convert.ToBase64String(tcpResponseBytes, 0, tcpResponseBytes.Length));
+                    Console.WriteLine(Convert.ToBase64String(tcpResponseBytes, 0, tcpResponseBytes.Length));
+                    Console.Out.Flush();
                     tcpRequestCommand = tcpScanner.Scan();
                 }
                 line = Console.ReadLine();
             }
 
             throw new Exception("Stdin closed unexpectedly");
-        }
-
-        private static void WriteLine(string format, params object[] args)
-        {
-            Console.WriteLine(format, args);
-            Console.Out.Flush();
         }
 
         private static void CheckLoop(SerialPort serial)

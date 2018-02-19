@@ -35,8 +35,10 @@ namespace SharpChannel.Channels.SocketChannel
                 Thrower.Throw("Timeout connecting to {0}:{1}", config.IP, config.Port);
             socket.EndConnect(result);
 
-            var thread = new Thread(() => { ReadLoop(socket); });
-            thread.IsBackground = true;
+            var thread = new Thread(() => { ReadLoop(socket); })
+            {
+                IsBackground = true
+            };
             thread.Start();
 
             var line = Console.ReadLine();
@@ -51,12 +53,6 @@ namespace SharpChannel.Channels.SocketChannel
             throw new Exception("Stdin closed unexpectedly");
         }
 
-        private static void WriteLine(string format, params object[] args)
-        {
-            Console.WriteLine(format, args);
-            Console.Out.Flush();
-        }
-
         private static void ReadLoop(TcpClient socket)
         {
             var bytes = new byte[4096];
@@ -66,7 +62,8 @@ namespace SharpChannel.Channels.SocketChannel
                 var count = socket.GetStream().Read(bytes, 0, bytes.Length);
                 if (count <= 0) throw new Exception("Socket closed unexpectedly");
                 var line = Convert.ToBase64String(bytes, 0, count);
-                WriteLine(line);
+                Console.WriteLine(line);
+                Console.Out.Flush();
             }
         }
     }

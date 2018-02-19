@@ -28,17 +28,12 @@ namespace SharpChannel.Channels.EchoChannel
 
             while (line != null)
             {
-                WriteLine(line);
+                Console.WriteLine(line);
+                Console.Out.Flush();
                 line = Console.ReadLine();
             }
 
             throw new Exception("Stdin closed unexpectedly");
-        }
-
-        private static void WriteLine(string format, params object[] args)
-        {
-            Console.WriteLine(format, args);
-            Console.Out.Flush();
         }
     }
 }

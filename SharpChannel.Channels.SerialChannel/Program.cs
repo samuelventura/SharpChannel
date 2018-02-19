@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO.Ports;
 using System.Threading;
-using SharpChannel.Tools;
 
 namespace SharpChannel.Channels.SerialChannel
 {
@@ -49,12 +48,6 @@ namespace SharpChannel.Channels.SerialChannel
             throw new Exception("Stdin closed unexpectedly");
         }
 
-        private static void WriteLine(string format, params object[] args)
-        {
-            Console.WriteLine(format, args);
-            Console.Out.Flush();
-        }
-
         private static void ReadLoop(SerialPort serial)
         {
             var bytes = new byte[4096];
@@ -64,7 +57,8 @@ namespace SharpChannel.Channels.SerialChannel
                 var count = serial.Read(bytes, 0, bytes.Length);
                 if (count <= 0) throw new Exception("Serial port closed unexpectedly");
                 var line = Convert.ToBase64String(bytes, 0, count);
-                WriteLine(line);
+                Console.WriteLine(line);
+                Console.Out.Flush();
             }
         }
     }
