@@ -33,8 +33,10 @@ namespace SharpChannel.Channels.ModbusChannel
             Config.Parse(serial, cmdline);
             serial.Open();
 
-            var thread = new Thread(() => { CheckLoop(serial); });
-            thread.IsBackground = true;
+            var thread = new Thread(() => { CheckLoop(serial); })
+            {
+                IsBackground = true
+            };
             thread.Start();
 
             var stream = new ModbusSerialStream(serial, 800);
