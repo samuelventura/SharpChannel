@@ -3,7 +3,7 @@
 
 #define MyAppName "Channel Manager VISA Plugin"
 #define MyAppParent "Channel Manager"
-#define MyAppVersion "1.0.2"
+#define MyAppVersion "1.0.3"
 #define MyAppPublisher "Samuel Ventura" 
 #define MyAppURL "https://github.com/samuelventura/SharpChannel"
 
@@ -31,7 +31,7 @@ SolidCompression=yes
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: "SharpChannel.Channels.VISAChannel\bin\x86\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "SharpChannel.Channels.VISAChannel\bin\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Run]
