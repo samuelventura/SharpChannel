@@ -3,7 +3,7 @@
 
 #define MyAppName "Channel Manager VISA Plugin"
 #define MyAppParent "Channel Manager"
-#define MyAppVersion "1.0.3"
+#define MyAppVersion "1.0.4"
 #define MyAppPublisher "Samuel Ventura" 
 #define MyAppURL "https://github.com/samuelventura/SharpChannel"
 
@@ -14,12 +14,11 @@
 AppId={{061E4D74-E884-42F5-A449-774DDC9D164B}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
-;AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
-DefaultDirName={pf}\{#MyAppParent}
+DefaultDirName={pf}\{#MyAppPublisher}\{#MyAppParent}\thirdparty\SharpChannel.Channels.VISAChannel
 DefaultGroupName={#MyAppParent}
 OutputBaseFilename=ChannelManager.VISAChannel.Setup-{#MyAppVersion}
 SetupIconFile=favicon.ico
@@ -35,10 +34,10 @@ Source: "SharpChannel.Channels.VISAChannel\bin\Release\*"; DestDir: "{app}"; Fla
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Run]
-Filename: "{app}\ServiceRestart.bat";
+Filename: "{pf}\{#MyAppPublisher}\{#MyAppParent}\ServiceRestart.bat";
 
 [UninstallRun]
-Filename: "{app}\ServiceStop.bat";
+Filename: "{pf}\{#MyAppPublisher}\{#MyAppParent}\ServiceStop.bat";
 
 [Code]
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);       
@@ -47,6 +46,6 @@ var
 begin
   if CurUninstallStep = usDone then
   begin
-    Exec(ExpandConstant('{app}\ServiceStart.bat'), '', '', SW_SHOW, ewWaitUntilTerminated, ResultCode)
+    Exec(ExpandConstant('{pf}\{#MyAppPublisher}\{#MyAppParent}\ServiceStart.bat'), '', '', SW_SHOW, ewWaitUntilTerminated, ResultCode)
   end;
 end;

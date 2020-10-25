@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading;
 using System.Collections.Generic;
 using SharpChannel.Manager.Instance;
 using SharpChannel.Tools;
@@ -53,7 +52,7 @@ namespace SharpChannel.Manager
                         var arguments = string.Format("{0} {1} {2} {3}", ip, instance.Port, executable, instance.Config);
                         states?.Invoke(instance.Id, string.Empty);
                         setups[instance.Id] = setup;
-                        controllers[instance.Id] = new Controller("SharpChannel.Manager.Instance", arguments);
+                        controllers[instance.Id] = new Controller("SharpChannel.Manager.Instance.exe", arguments);
                         logger.Info("{0} Endpoint {1}:{2}", instance.Id, ip, instance.Port);
                         logger.Info("{0} Executable {1}", instance.Id, executable);
                         logger.Info("{0} Config {1}", instance.Id, instance.Config);

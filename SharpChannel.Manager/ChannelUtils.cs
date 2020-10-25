@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.IO;
+using System.Net;
 using System.Diagnostics;
 using System.Collections.Generic;
 using SharpChannel.Tools;
@@ -17,9 +18,17 @@ namespace SharpChannel.Manager
                                 );
         }
 
+        public static bool IsThirdParty(string type)
+        {
+            var path = Executable.Relative("views", $"Edit{type}Channel.html");
+            return !File.Exists(path);
+        }
+
         public static string ExecutableName(string type)
         {
-            return string.Format("SharpChannel.Channels.{0}Channel.exe", type);
+            var name = string.Format("SharpChannel.Channels.{0}Channel", type);
+            if (!IsThirdParty(type)) return $"{name}.exe";
+            return Path.Combine("thirdparty", name, $"{name}.exe");
         }
 
         public static string IPAccess(ChannelAccess access)
@@ -31,6 +40,7 @@ namespace SharpChannel.Manager
             }
             return null;
         }
+
         public static List<string> List(string type)
         {
             var filename = ExecutableName(type);
@@ -42,7 +52,8 @@ namespace SharpChannel.Manager
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
-                RedirectStandardInput = true
+                RedirectStandardInput = true,
+                //WorkingDirectory = Path.GetDirectoryName(filepath),
             };
             var disposer = new Disposer();
             using (disposer)

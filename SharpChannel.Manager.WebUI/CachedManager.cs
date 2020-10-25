@@ -120,6 +120,13 @@ namespace SharpChannel.Manager.WebUI
         private List<ChannelPlugin> FindPlugins()
         {
             var list = new List<ChannelPlugin>();
+            AddPlugins(list);
+            AddThirdPartyPlugins(list);
+            return list;
+        }
+
+        private void AddPlugins(List<ChannelPlugin> list)
+        {
             var folder = Executable.Relative("plugins");
             var regex = new Regex(@"(.*)Channel\.txt");
             var glob = @"*Channel.txt";
@@ -134,12 +141,46 @@ namespace SharpChannel.Manager.WebUI
                 {
                     Type = type,
                     Name = File.ReadAllText(path),
-                    View = string.Format("Edit{0}Channel", type)
+                    View = $"Edit{type}Channel",
                 };
                 manager.Logger.Info("Plugin {0} {1}", file, plugin.Name);
                 list.Add(plugin);
             }
-            return list;
+        }
+
+        private void AddThirdPartyPlugins(List<ChannelPlugin> list)
+        {
+            //nancy looks for default here first!
+            var views = Executable.Relative("views", "thirdparty");
+            Directory.CreateDirectory(views);
+            var folder = Executable.Relative("thirdparty");
+            Directory.CreateDirectory(folder);
+            var regex = new Regex(@"SharpChannel\.Channels\.(.*)Channel");
+            var glob = @"SharpChannel.Channels.*Channel";
+            var files = Directory.EnumerateDirectories(folder, glob, SearchOption.TopDirectoryOnly);
+            foreach (var path in files)
+            {
+                var file = Path.GetFileName(path);
+                var match = regex.Match(file);
+                if (!match.Success) continue;
+                var type = match.Groups[1].Value;
+                var exe = Path.Combine(file, $"{file}.exe");
+                var name = Path.Combine(file, "plugins", $"{type}Channel.txt");
+                var view = Path.Combine(file, "views", $"Edit{type}Channel.html");
+                if (!File.Exists(Path.Combine(folder, exe))) continue;
+                if (!File.Exists(Path.Combine(folder, name))) continue;
+                if (!File.Exists(Path.Combine(folder, view))) continue;
+                File.Copy(Path.Combine(folder, view), Path.Combine(views, $"Edit{type}Channel.html"), true);
+                var plugin = new ChannelPlugin
+                {
+                    Third = true,
+                    Type = type,
+                    Name = File.ReadAllText(Path.Combine(folder, name)),
+                    View = $"Edit{type}Channel",
+                };
+                manager.Logger.Info("Plugin {0} {1}", name, plugin.Name);
+                list.Add(plugin);
+            }
         }
     }
 }

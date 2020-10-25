@@ -59,6 +59,7 @@ namespace SharpChannel.Manager.Service
                 ServiceBase.Run(new Program());
             }
         }
+
         private static void CurrentDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             var filename = Executable.Relative("error.txt");

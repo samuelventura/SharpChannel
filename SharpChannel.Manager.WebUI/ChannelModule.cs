@@ -7,14 +7,23 @@ using SharpChannel.Tools;
 
 namespace SharpChannel.Manager.WebUI
 {
-    public class ChannelModule : Nancy.NancyModule
+    public class ChannelModule : NancyModule
     {
-        private readonly string LOOPBACK = "127.0.0.1";
-        private readonly JavaScriptSerializer serializer = new Nancy.Json.JavaScriptSerializer();
+        private readonly JavaScriptSerializer serializer = new JavaScriptSerializer();
+
+        private bool IsLoopback(string ip)
+        {
+            //Profile.Trace("IsLoopback {0}", ip);
+            //both sent by chrome while debuging 
+            if (ip == "127.0.0.1") return true;
+            if (ip == "::1") return true;
+            return false;
+        }
 
         public ChannelModule(CachedManager manager)
         {
             Get["/"] = _ => {
+                //Profile.Trace("/ from:{0}", Request.UserHostAddress);
                 return View["ChannelIndex.html", manager.List()];
             };
             //curl http://127.0.0.1:2018/Test
@@ -66,7 +75,7 @@ namespace SharpChannel.Manager.WebUI
                 return View[view, model];
             };
             Post["/UpdateChannel/{id:int}/{access}"] = p => {
-                if (LOOPBACK == Request.UserHostAddress)
+                if (IsLoopback(Request.UserHostAddress))
                 {
                     var access = Enum.Parse(typeof(ChannelAccess), p["access"]);
                     manager.Update(p["id"], access);
@@ -74,7 +83,7 @@ namespace SharpChannel.Manager.WebUI
                 return new RedirectResponse("/");
             };
             Post["/SaveChannel"] = p => {
-                if (LOOPBACK == Request.UserHostAddress)
+                if (IsLoopback(Request.UserHostAddress))
                 {
                     var instance = this.Bind<ChannelInstance>();
                     int id = manager.Save(instance);
@@ -82,7 +91,7 @@ namespace SharpChannel.Manager.WebUI
                 return new RedirectResponse("/");
             };
             Post["/RemoveChannel/{id:int}"] = p => {
-                if (LOOPBACK == Request.UserHostAddress)
+                if (IsLoopback(Request.UserHostAddress))
                 {
                     manager.Delete(p["id"]);
                 }

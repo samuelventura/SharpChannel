@@ -13,7 +13,7 @@ namespace SharpChannel.Channels.EchoChannel
 
         public static void Main(string[] args)
         {
-            System.AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionTrapper;
+            AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionTrapper;
 
             if (args.Length > 0)
             {

@@ -1,6 +1,7 @@
 ﻿using System;
 using Nancy.Hosting.Self;
 using System.Configuration;
+using SharpChannel.Tools;
 
 namespace SharpChannel.Manager.WebUI
 {
@@ -13,8 +14,10 @@ namespace SharpChannel.Manager.WebUI
 
         public NancyLauncher()
         {
+            //netsh http add urlacl url = http://+:8888/ user=Everyone
             var port = ConfigurationManager.AppSettings.Get("port");
             uri = string.Format("http://localhost:{0}", port);
+            if (Profile.IsDebug()) uri = "http://localhost:8888";
             host = new NancyHost(new Uri(uri));
         }
 

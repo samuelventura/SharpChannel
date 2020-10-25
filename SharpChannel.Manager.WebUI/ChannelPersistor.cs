@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using SharpChannel.Manager;
 using SharpChannel.Tools;
 using LiteDB;
 

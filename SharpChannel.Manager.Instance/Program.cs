@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Threading;
@@ -24,7 +25,7 @@ namespace SharpChannel.Manager.Instance
 
         public static void Main(string[] args)
         {
-            System.AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionTrapper;
+            AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionTrapper;
 
             var joint = string.Join(" ", args);
             var parts = joint.Split(new char[] { ' ' }, 4);
@@ -33,9 +34,7 @@ namespace SharpChannel.Manager.Instance
             var executable = parts[2];
             var arguments = parts.Length > 3 ? parts[3] : string.Empty;
 
-            WriteError("{0}:{1}", Readable.Make(ip), port);
-            WriteError(Readable.Make(executable));
-            WriteError(Readable.Make(arguments));
+            WriteState(joint); //should be prefixed with # to route correctly
 
             var listener = new TcpListener(IPAddress.Parse(ip), port);
 
@@ -55,14 +54,16 @@ namespace SharpChannel.Manager.Instance
 
         private static ProcessStartInfo BuildStartInfo(string executable, string arguments)
         {
-            var pi = new ProcessStartInfo(Executable.Relative(executable))
+            var filepath = Executable.Relative(executable);
+            var pi = new ProcessStartInfo(filepath)
             {
                 Arguments = arguments,
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
-                RedirectStandardInput = true
+                RedirectStandardInput = true,
+                WorkingDirectory = Path.GetDirectoryName(filepath),
             };
             return pi;
         }

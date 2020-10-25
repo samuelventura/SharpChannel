@@ -15,7 +15,16 @@
 * Save/delete of channels restricted to localhost
 * JSON channel directory exposed at http://+:2017/Api/Index
 * Channels are process isolated to tackle buggy device drivers
+* Plugins are process isolated to avoid DLL cross contamination
 
 ## Plugins
 * NationalInstruments VISA with NIVISA1700runtime
 ![ChannelManager.VISA](screenshot-visa.png)
+
+## Todo
+* DLL isolated third party plugins (workdir)
+* Auto install required plugins
+* Fat exe with embedded views
+* Logs should show source
+* Websocket for structured comm
+

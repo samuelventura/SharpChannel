@@ -16,7 +16,7 @@ namespace SharpChannel.Channels.ModbusChannel
 
         public static void Main(string[] args)
         {
-            System.AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionTrapper;
+            AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionTrapper;
 
             var cmdline = string.Join(" ", args);
 

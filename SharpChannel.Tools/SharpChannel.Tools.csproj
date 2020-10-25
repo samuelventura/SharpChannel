@@ -52,6 +52,7 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Profile.cs" />
     <Compile Include="Disposer.cs" />
     <Compile Include="Executable.cs" />
     <Compile Include="Logger.cs" />

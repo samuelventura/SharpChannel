@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using System.Diagnostics;
@@ -20,15 +21,16 @@ namespace SharpChannel.Manager.Instance
 
         public Controller(string executable, string arguments)
         {
-            var filename = Executable.Relative(executable);
-            var pi = new ProcessStartInfo(filename)
+            var filepath = Executable.Relative(executable);
+            var pi = new ProcessStartInfo(filepath)
             {
                 Arguments = arguments,
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
-                RedirectStandardInput = true
+                RedirectStandardInput = true,
+                WorkingDirectory = Path.GetDirectoryName(filepath),
             };
             task = Task.Factory.StartNew(() => Loop(pi), opts);
         }
