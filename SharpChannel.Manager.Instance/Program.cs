@@ -34,7 +34,7 @@ namespace SharpChannel.Manager.Instance
             var executable = parts[2];
             var arguments = parts.Length > 3 ? parts[3] : string.Empty;
 
-            WriteState(joint); //should be prefixed with # to route correctly
+            WriteState("#" + joint); //prefixed with # to route correctly
 
             var listener = new TcpListener(IPAddress.Parse(ip), port);
 

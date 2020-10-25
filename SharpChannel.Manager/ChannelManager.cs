@@ -86,8 +86,17 @@ namespace SharpChannel.Manager
                 var state = controller.ReadState();
                 while (state != null)
                 {
-                    states?.Invoke(id, state);
-                    logger.Info("{0} State {1}", id, state);
+                    //just log states prefixed with #
+                    if (state.StartsWith("#"))
+                    {
+                        state = state.Substring(1);
+                        logger.Info("{0} {1}", id, state);
+                    }
+                    else
+                    {
+                        states?.Invoke(id, state);
+                        logger.Info("{0} State {1}", id, state);
+                    }
                     state = controller.ReadState();
                 }
                 var error = controller.ReadError();
